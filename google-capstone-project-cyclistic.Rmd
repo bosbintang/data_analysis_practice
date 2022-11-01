@@ -1,0 +1,101 @@
+---
+title: "Coursera_capstone_case1"
+author: "bintang"
+date: "2022-10-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## COURSERA GOOGLE DATA ANALYTIC CAPSTONE PROJECT CASE 1
+
+Hello, this is my first data analysis project. This project will periodically updated as my practice. If you have any feedback feel free to reach me at bintanggfajar@gmail.com. 
+
+In this project I will try to analyze a case provided by google. The case is about a bike rent company named "Cyclistic", A bike-share program that features more than 5,800 bicycles and 600 docking stations. Cyclistic sets itself apart by also offering reclining bikes, hand tricycles, and cargo bikes, making bike-share more inclusive to people with disabilities and riders who can’t use a standard two-wheeled bike. The majority of riders opt for traditional bikes; about 8% of riders use the assistive options. Cyclistic users are more likely to ride for leisure, but about 30% use them to commute to work each day.
+
+Customers of Cyclistic are divided into two groups, member and casual. Member are obviously those who has the membership of Cyclistic and its benefits, meanwhile casual are those who just rent the bike. The main goal of the analysis is to find a way to make casual rider convert into member of the Cyclistic. The available data for analysis is available at https://divvy-tripdata.s3.amazonaws.com/index.html . The data that I am using are the last 12 month historical trip data. Started from October 2021 up to September 2022. Due to the large number of data I refer using R because in my opinion R is good at handling a large amount of data and provides plotting.
+
+Before we start we have to install and load the packages needed
+
+```{r installing pacages, results='hide', message=FALSE, warning=FALSE}
+install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+install.packages("dplyr", repos = "http://cran.us.r-project.org")
+install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+install.packages("lubridate", repos = "http://cran.us.r-project.org")
+install.packages("readr", repos = "http://cran.us.r-project.org")
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(readr)
+```
+
+If there is a problem importing data try change the working directory
+
+```{r setting directory, results='hide', message=FALSE, warning=FALSE}
+setwd("~/R")
+```
+
+
+To start the analysis I download the 12 data files and merge it into one.The name data01 will be for the first dataset, and continue to data02, data03 and so on.
+
+```{r read and merge data, results='hide', message=FALSE, warning=FALSE}
+data01 <- read.csv("202110-divvy-tripdata.csv")
+data02 <- read.csv("202111-divvy-tripdata.csv")
+data03 <- read.csv("202112-divvy-tripdata.csv")
+data04 <- read.csv("202201-divvy-tripdata.csv")
+data05 <- read.csv("202202-divvy-tripdata.csv")
+data06 <- read.csv("202203-divvy-tripdata.csv")
+data07 <- read.csv("202204-divvy-tripdata.csv")
+data08 <- read.csv("202205-divvy-tripdata.csv")
+data09 <- read.csv("202206-divvy-tripdata.csv")
+data10 <- read.csv("202207-divvy-tripdata.csv")
+data11 <- read.csv("202208-divvy-tripdata.csv")
+data12 <- read.csv("202209-divvy-publictripdata.csv")
+
+data <- rbind(data01, data02, data03, data04, data05, data06,  data07,  data08,  data09,  data10,  data11,  data12)
+```
+
+We have merged all data we need, now we have to check and eliminate if there is any duplicate within our data.
+
+```{r check duplicate, results='hide', message=FALSE, warning=FALSE}
+data <- distinct(data)
+```
+
+The next step is calculating the ride duration, and store the result into new column called "ride_duration".
+
+```{r calculating ride duration, results='hide', message=FALSE, warning=FALSE}
+data <- mutate(data, ride_duration = difftime(ended_at, started_at, units = "mins"))
+```
+
+Now we have to clean the data. We eliminate the data with the ride_duration value is less than zero. It means that the end day of the rent is happen before the start day of the rent, which is impossible. It possibly happens because of the wrong data input.
+
+```{r cleaning ride duration, results='hide', message=FALSE, warning=FALSE}
+data <- filter(data, ride_duration >= 0)
+```
+
+We have the ride duration, now we need to change the "started_at" column into a date data format. Before that, we separate the date and hour first.
+
+```{r separate and convert started_at into date data format, results='hide', message=FALSE, warning=FALSE}
+data <- separate(data, col = started_at, into = c('start_date', 'start_hour'), sep = ' ')
+data <- mutate(data, start_date = as.Date(start_date))
+```
+
+We also need to convert the date when a customer rent a bike into day data format. I make a new column called "rent_day" to store the result.
+
+```{r converting date into day, results='hide'}
+data <- mutate(data,rent_day = weekdays(start_date))
+```
+
+Now we can see the first result on how many rent are happen each days between member and casual riders.
+
+```{r plot on daily rent}
+data$rent_day <- factor(data$rent_day, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+ggplot(data) + geom_bar(mapping = aes(x = rent_day, fill = rideable_type)) + facet_wrap(~member_casual) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Based on the graph above we can see that the rent made by casual riders are lower than members on the weekdays. It possibly happens that because members use the bike for their daily routine like working and go to school or college. Meanwhile at the weekend the number of rent made by casual riders are higher than members. We can conclude that the casual riders are people who rides during their free time. From this condition we can see that casual riders might be interested with weekend plan membership, which is they will get benefits on their rents at the weekend.
+
+So far this is my first analysis. Feel free to reach me if you have any feedback.
